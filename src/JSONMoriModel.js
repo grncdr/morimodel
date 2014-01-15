@@ -15,8 +15,11 @@ function objectToHashMap(obj) {
     if (!obj.hasOwnProperty(k)) {
       continue;
     }
-    newArgs.push(k);
-    newArgs.push(obj[k]);
+    var v = obj[k]
+    if (typeof v == 'object' && v != null && !mori.is_collection(v)) {
+      throw new Error("It is unsafe to store mutable objects on model nodes")
+    }
+    newArgs.push(k, v);
   }
   return mori.hash_map.apply(mori, newArgs);
 }
