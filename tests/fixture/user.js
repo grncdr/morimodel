@@ -1,6 +1,6 @@
 var createNode = require('../../src/createNode');
 
-module.exports = createNode({
+var User = module.exports = createNode({
   getDescription: function() {
     var data = this.getData();
     return 'User ' + data.name + ', age ' + data.age + ' (' + this.getNodes('friend', User).length + ' friends)';
