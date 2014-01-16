@@ -1,11 +1,10 @@
-var keyMirror = require('./utils').keyMirror;
-
-var EdgeKeys = keyMirror({
-  TYPE: null,
-  KEY: null,
-  KEY2: null,
-  ORDER: null,
-  DATA: null
-});
-
-module.exports = EdgeKeys;
+module.exports = [
+  'TYPE',
+  'ORDER',
+  'SRC',
+  'DEST',
+  'DATA'
+].reduce(function (acc, key, i) {
+  acc[key] = i;
+  return acc
+}, {})

@@ -6,35 +6,6 @@ var emptyFunction = utils.emptyFunction;
 
 var MoriModel = require('./MoriModel');
 
-function objectToHashMap(obj) {
-  if (mori.is_map(obj)) {
-    return obj;
-  }
-  var newArgs = [];
-  for (var k in obj) {
-    if (!obj.hasOwnProperty(k)) {
-      continue;
-    }
-    var v = obj[k]
-    if (typeof v == 'object' && v != null && !mori.is_collection(v)) {
-      throw new Error("It is unsafe to store mutable objects on model nodes")
-    }
-    newArgs.push(k, v);
-  }
-  return mori.hash_map.apply(mori, newArgs);
-}
-
-function hashMapToObject(hashMap) {
-  if (!mori.is_map(hashMap)) {
-    return hashMap;
-  }
-
-  return mori.reduce(function(accum, key) {
-    accum[key] = mori.get(hashMap, key);
-    return accum;
-  }, {}, mori.keys(hashMap));
-}
-
 function JSONMoriModel(onChange, moriModel) {
   this._onChange = onChange || emptyFunction;
   this._moriModel = moriModel || new MoriModel();
@@ -43,6 +14,10 @@ function JSONMoriModel(onChange, moriModel) {
 copyProperties(JSONMoriModel.prototype, {
   getNode: function(key) {
     return hashMapToObject(this._moriModel.getNode(key));
+  },
+  getNodeProperty: function (key, name) {
+    var map = this._moriModel.getNode(key)
+    return mori.get(map, name)
   },
   addNode: function(key, value) {
     this._moriModel.addNode(key, objectToHashMap(value));

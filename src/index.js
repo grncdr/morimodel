@@ -1,7 +1,7 @@
-var JSONMoriModel = require('./JSONMoriModel');
+var MoriModel = require('./MoriModel');
 var createNode = require('./createNode');
 
 module.exports = {
-  Model: JSONMoriModel,
+  Model: MoriModel,
   createNode: createNode
 };
