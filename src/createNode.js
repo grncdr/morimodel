@@ -25,15 +25,7 @@ function createNode(spec) {
     return node;
   }
 
-  spec = spec || {};
-
-  if (spec) {
-    if (spec.static) {
-      extend(Node, spec.static)
-      delete spec.static
-    }
-    extend(Node.prototype, spec)
-  }
+  if (spec) mixin(Node, spec)
 
   return Node;
 }
@@ -89,5 +81,22 @@ var NodePrototype = {
       nodes.push(NodeClass.get(this.model, key))
       return nodes
     }.bind(this), [], this.model.getEdges(type, this.key))
+  }
+}
+
+function mixin (ctor, spec) {
+  spec = extend({}, spec) // copy to avoid modifying mixins
+  var subMixin = mixin.bind(null, ctor)
+  for (var k in spec) {
+    switch (k) {
+      case "static":
+        extend(true, ctor, spec[k]);
+        break;
+      case "mixins":
+        spec[k].forEach(subMixin)
+        break;
+      default:
+        ctor.prototype[k] = spec[k];
+    }
   }
 }
