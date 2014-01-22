@@ -4,11 +4,10 @@ var EdgeKeys = require('./EdgeKeys');
 
 module.exports = MoriModel;
 
-function MoriModel(opts) {
-  opts = opts || {}
-  this._nodes = this._prevNodes = opts.nodes || mori.hash_map();
-  this._edges = this._prevEdges = opts.edges || mori.hash_map();
-  this._onCommit = opts._onCommit
+function MoriModel(onCommit) {
+  this._nodes = mori.hash_map();
+  this._edges = mori.hash_map();
+  this._onCommit = onCommit
   this._committed = false;
 }
 
@@ -17,18 +16,22 @@ MoriModel.prototype.getNode = function(key) {
 }
 
 MoriModel.prototype.addNode = function(key, value) {
+  throwIfCommitted(this)
   this._nodes = mori.assoc(this._nodes, key, value);
 }
 
 MoriModel.prototype.removeNode = function(key) {
+  throwIfCommitted(this)
   this.addNode(key, null);
 }
 
 MoriModel.prototype.updateNode = function (key, value) {
+  throwIfCommitted(this)
   this._nodes = mori.assoc(this._nodes, key, value);
 }
 
 MoriModel.prototype.addEdge = function(type, key, key2, order, data) {
+  throwIfCommitted(this)
   var newEdge = mori.vector(
     type,
     order || -1,
@@ -59,6 +62,7 @@ MoriModel.prototype.addEdge = function(type, key, key2, order, data) {
 }
 
 MoriModel.prototype.removeEdge = function(type, key, key2) {
+  throwIfCommitted(this)
   var prevEdges = mori.get(this._edges, key);
   if (prevEdges) {
     var nextEdges = mori.filter(function(edge) {
@@ -69,6 +73,7 @@ MoriModel.prototype.removeEdge = function(type, key, key2) {
 }
 
 MoriModel.prototype.updateEdge = function (oldEdge, property, value) {
+  throwIfCommitted(this)
   var sourceKey = mori.get(oldEdge, EdgeKeys.SRC)
   var prevEdges = mori.get(this._edges, sourceKey)
   var newEdge = mori.assoc(oldEdge, property, value)
@@ -103,22 +108,26 @@ MoriModel.prototype.getNodeByType = function(type, key) {
   return mori.first(this.getNodesByType(type, key));
 }
 
+MoriModel.prototype.fork = function (onCommit) {
+  var model = new MoriModel(onCommit || this._onCommit)
+  model._nodes = this._nodes
+  model._edges = this._edges
+  return model
+}
+
 MoriModel.prototype.commit = function(metadata) {
-  if (this._committed) {
-    throw new Error('You already called commit() on this model.');
+  throwIfCommitted(this)
+
+  var snapshot = this.fork()
+  snapshot._committed = true
+
+  if (this._onCommit) this._onCommit(snapshot, metadata)
+
+  return snapshot;
+}
+
+function throwIfCommitted (model) {
+  if (model._committed) {
+    throw new Error('This model is a snapshot')
   }
-
-  var nextGraph = new MoriModel({
-    nodes: this._nodes,
-    edges: this._edges,
-    onCommit: this._onCommit
-  });
-
-  this._nodes = this._prevNodes
-  this._edges = this._prevEdges
-
-  this._committed = true;
-  if (this._onCommit) this._onCommit(metadata)
-
-  return nextGraph;
 }
